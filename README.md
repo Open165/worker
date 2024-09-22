@@ -15,3 +15,10 @@ npm run dev
 ```
 
 Then visit `http://localhost:8787?url=...` to get reconnaissance result
+
+## Deploy
+
+Deploy to Cloudflare workers using:
+```bash
+npm run deploy
+```
