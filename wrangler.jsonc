@@ -1,0 +1,17 @@
+// wrangler.jsonc
+{
+  // Cloudflare Worker configuration
+  "name": "open165-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-03-07",
+  "compatibility_flags": ["nodejs_compat"],
+  // Enable observability and sampling
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  // Headless browser rendering binding
+  "browser": {
+    "binding": "MYBROWSER"
+  }
+}
