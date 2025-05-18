@@ -14,12 +14,9 @@ const compat = new FlatCompat({
 });
 
 export default (async () => [
-  globalIgnores(['**/node_modules/', '**/dist/', '**/coverage/', '**/.wrangler/']),
+  globalIgnores(['**/node_modules/', '**/dist/', '**/coverage/', '**/.wrangler/', 'worker-configuration.d.ts']),
   js.configs.recommended, // ESLint's own recommended flat config
-  ...(await compat.extends(
-    'plugin:@typescript-eslint/recommended',
-    'plugin:prettier/recommended'
-  )),
+  ...(await compat.extends('plugin:@typescript-eslint/recommended', 'plugin:prettier/recommended')),
   {
     // Customizations and overrides
     files: ['**/*.js', '**/*.jsx', '**/*.ts', '**/*.tsx', '**/*.mjs', '**/*.cjs'],
@@ -48,6 +45,17 @@ export default (async () => [
       parserOptions: {
         project: './tsconfig.json',
         tsconfigRootDir: __dirname, // Directory containing tsconfig.json (project root)
+      },
+    },
+  },
+  {
+    // Specific settings for TypeScript test files
+    files: ['test/**/*.ts', 'test/**/*.tsx'],
+    languageOptions: {
+      parser: tsParser,
+      parserOptions: {
+        project: './test/tsconfig.json',
+        tsconfigRootDir: __dirname,
       },
     },
   },
