@@ -1,6 +1,6 @@
 # Open165 Worker
 
-Browser rendering worker for reconnaissance of scam websites.
+Integrations and workflows for Open165.
 
 ## First-time setup
 
