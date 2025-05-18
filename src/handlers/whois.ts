@@ -1,14 +1,20 @@
 import { domain as whoiserDomain } from 'whoiser';
+import type { WhoisSearchResult } from 'whoiser';
 import psl from 'psl';
+
+interface Result {
+  createdAt: string;
+  updatedAt: string;
+  expireAt: string;
+  registrarUrl: string;
+  nameServer: string | string[];
+  details: WhoisSearchResult;
+}
 
 /**
  * Handles WHOIS lookups for a given host.
  */
-export async function whoisHandler(
-  request: Request,
-  env: Env,
-  ctx: ExecutionContext
-): Promise<Response> {
+export async function whoisHandler(request: Request): Promise<Response> {
   const url = new URL(request.url);
   const hostParam = url.searchParams.get('host');
 
@@ -19,24 +25,22 @@ export async function whoisHandler(
   let domainToQuery = hostParam;
   try {
     const parsed = psl.parse(hostParam);
-    if(parsed.error || !parsed.domain) {
+    if (parsed.error || !parsed.domain) {
       throw new Error(`psl.parse error: ${parsed.error}`);
     }
     domainToQuery = parsed.domain;
-
   } catch (e) {
     // psl.parse might throw an error for completely invalid inputs
     console.warn(`[psl] Error parsing host: ${hostParam}`, e);
     // Fallback to original hostParam
   }
 
-
   try {
     const whoisDataByServer = await whoiserDomain(domainToQuery, {
       timeout: 5000,
     });
 
-    const result: Record<string, any> = {};
+    const result: Partial<Result> = {};
     const requiredKeys = ['createdAt', 'updatedAt', 'expireAt', 'registrarUrl', 'nameServer'];
 
     // Iterate over the results from different WHOIS servers
@@ -62,7 +66,7 @@ export async function whoisHandler(
       }
       if (!result.nameServer && serverData['Name Server']) {
         const currentNameServer = serverData['Name Server'];
-        result.nameServer = Array.isArray(currentNameServer) ? currentNameServer.map(ns => ns.toString()) : currentNameServer.toString();
+        result.nameServer = Array.isArray(currentNameServer) ? currentNameServer.map((ns) => ns.toString()) : currentNameServer.toString();
       }
 
       // If all required fields are found, break the loop
@@ -75,8 +79,7 @@ export async function whoisHandler(
     return new Response(JSON.stringify(result), {
       headers: { 'Content-Type': 'application/json' },
     });
-
-  } catch (error: any) {
-    return new Response(`WHOIS lookup failed for ${hostParam}: ${error.toString()}`, { status: 500 });
+  } catch (error: unknown) {
+    return new Response(`WHOIS lookup failed for ${hostParam}: ${String(error)}`, { status: 500 });
   }
 }

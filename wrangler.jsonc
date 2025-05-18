@@ -8,10 +8,10 @@
   // Enable observability and sampling
   "observability": {
     "enabled": true,
-    "head_sampling_rate": 1
+    "head_sampling_rate": 1,
   },
   // Headless browser rendering binding
   "browser": {
-    "binding": "MYBROWSER"
-  }
+    "binding": "MYBROWSER",
+  },
 }
