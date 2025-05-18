@@ -1,14 +1,14 @@
 import { whoisDomain } from 'whoiser';
 import psl from 'psl';
 
-interface Result {
+export type Result = {
   createdAt: string;
   updatedAt: string;
   expireAt: string;
   registrarUrl: string;
   nameServer: string | string[];
   details: Record<string, unknown>;
-}
+};
 
 /**
  * Handles WHOIS lookups for a given host.
