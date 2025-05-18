@@ -1,5 +1,5 @@
-import { domain } from 'whoiser';
-import type { WhoisSearchResult } from 'whoiser';
+import { domain as whoiserDomain } from 'whoiser';
+import psl from 'psl';
 
 /**
  * Handles WHOIS lookups for a given host.
@@ -10,15 +10,30 @@ export async function whoisHandler(
   ctx: ExecutionContext
 ): Promise<Response> {
   const url = new URL(request.url);
-  const host = url.searchParams.get('host');
+  const hostParam = url.searchParams.get('host');
 
-  if (!host) {
+  if (!hostParam) {
     return new Response('Missing host parameter', { status: 400 });
   }
 
+  let domainToQuery = hostParam;
   try {
-    const whoisDataByServer = await domain(host, {
-      timeout: 5000, // Faster timeout
+    const parsed = psl.parse(hostParam);
+    if(parsed.error || !parsed.domain) {
+      throw new Error(`psl.parse error: ${parsed.error}`);
+    }
+    domainToQuery = parsed.domain;
+
+  } catch (e) {
+    // psl.parse might throw an error for completely invalid inputs
+    console.warn(`[psl] Error parsing host: ${hostParam}`, e);
+    // Fallback to original hostParam
+  }
+
+
+  try {
+    const whoisDataByServer = await whoiserDomain(domainToQuery, {
+      timeout: 5000,
     });
 
     const result: Record<string, any> = {};
@@ -62,6 +77,6 @@ export async function whoisHandler(
     });
 
   } catch (error: any) {
-    return new Response(`WHOIS lookup failed for ${host}: ${error.toString()}`, { status: 500 });
+    return new Response(`WHOIS lookup failed for ${hostParam}: ${error.toString()}`, { status: 500 });
   }
 }
