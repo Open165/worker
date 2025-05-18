@@ -1,15 +1,6 @@
 import { domain } from 'whoiser';
 import type { WhoisSearchResult } from 'whoiser';
 
-function getFirstAvailableKey(data: WhoisSearchResult, keys: string[]) {
-  for (const key of keys) {
-    if (key in data) {
-      return data[key];
-    }
-  }
-  return undefined;
-}
-
 /**
  * Handles WHOIS lookups for a given host.
  */
@@ -26,14 +17,15 @@ export async function whoisHandler(
   }
 
   try {
-    const whoisDataByServer = await domain(host);
+    const whoisDataByServer = await domain(host, {
+      timeout: 5000, // Faster timeout
+    });
 
-    let createdAtRaw: WhoisSearchResult[string];
-    let expireAtRaw: WhoisSearchResult[string];
+    const result: Record<string, any> = {};
+    const requiredKeys = ['createdAt', 'updatedAt', 'expireAt', 'registrarUrl', 'nameServer'];
 
     // Iterate over the results from different WHOIS servers
-    // and try to find the creation and expiry dates.
-    // We prioritize results that have both dates.
+    // and try to find the required information.
     for (const [serverName, serverData] of Object.entries(whoisDataByServer)) {
       if (Array.isArray(serverData) || typeof serverData === 'string') {
         console.warn('[whoiser] Unexpected WHOIS server response format:', serverData);
@@ -41,21 +33,31 @@ export async function whoisHandler(
         continue;
       }
 
-      const currentCreatedAt = getFirstAvailableKey(serverData, ['Creation Date', 'Created Date']);
-      const currentExpireAt = getFirstAvailableKey(serverData, ['Expiry Date', 'Registrar Registration Expiration Date', 'Registry Expiry Date']);
+      if (!result.createdAt && serverData['Created Date']) {
+        result.createdAt = new Date(serverData['Created Date'].toString()).toISOString();
+      }
+      if (!result.updatedAt && serverData['Updated Date']) {
+        result.updatedAt = new Date(serverData['Updated Date'].toString()).toISOString();
+      }
+      if (!result.expireAt && serverData['Expiry Date']) {
+        result.expireAt = new Date(serverData['Expiry Date'].toString()).toISOString();
+      }
+      if (!result.registrarUrl && serverData['Registrar URL']) {
+        result.registrarUrl = serverData['Registrar URL'].toString();
+      }
+      if (!result.nameServer && serverData['Name Server']) {
+        const currentNameServer = serverData['Name Server'];
+        result.nameServer = Array.isArray(currentNameServer) ? currentNameServer.map(ns => ns.toString()) : currentNameServer.toString();
+      }
 
-      if (currentCreatedAt && currentExpireAt) {
-        const createdAt = new Date(currentCreatedAt.toString()).toISOString();
-        const expireAt = new Date(currentExpireAt.toString()).toISOString();
-
-        return new Response(JSON.stringify({ createdAt, expireAt, details: whoisDataByServer }), {
-          headers: { 'Content-Type': 'application/json' },
-        });
+      // If all required fields are found, break the loop
+      if (Object.keys(result).length === requiredKeys.length) {
+        break;
       }
     }
+    result.details = whoisDataByServer;
 
-    // If we reach here, it means we didn't find both dates in any server's response.
-    return new Response(JSON.stringify({ details: whoisDataByServer }), {
+    return new Response(JSON.stringify(result), {
       headers: { 'Content-Type': 'application/json' },
     });
 
