@@ -1,15 +1,14 @@
-import { domain as whoiserDomain } from 'whoiser';
-import type { WhoisSearchResult } from 'whoiser';
+import { whoisDomain } from 'whoiser';
 import psl from 'psl';
 
-interface Result {
+export type Result = {
   createdAt: string;
   updatedAt: string;
   expireAt: string;
   registrarUrl: string;
   nameServer: string | string[];
-  details: WhoisSearchResult;
-}
+  details: Record<string, unknown>;
+};
 
 /**
  * Handles WHOIS lookups for a given host.
@@ -36,7 +35,7 @@ export async function whoisHandler(request: Request): Promise<Response> {
   }
 
   try {
-    const whoisDataByServer = await whoiserDomain(domainToQuery, {
+    const whoisDataByServer: { [nsServer: string]: Record<string, unknown> } = await whoisDomain(domainToQuery, {
       timeout: 5000,
     });
 
@@ -52,21 +51,21 @@ export async function whoisHandler(request: Request): Promise<Response> {
         continue;
       }
 
-      if (!result.createdAt && serverData['Created Date']) {
-        result.createdAt = new Date(serverData['Created Date'].toString()).toISOString();
+      if (!result.createdAt && 'Created Date' in serverData) {
+        result.createdAt = new Date(String(serverData['Created Date'])).toISOString();
       }
-      if (!result.updatedAt && serverData['Updated Date']) {
-        result.updatedAt = new Date(serverData['Updated Date'].toString()).toISOString();
+      if (!result.updatedAt && 'Updated Date' in serverData) {
+        result.updatedAt = new Date(String(serverData['Updated Date'])).toISOString();
       }
-      if (!result.expireAt && serverData['Expiry Date']) {
-        result.expireAt = new Date(serverData['Expiry Date'].toString()).toISOString();
+      if (!result.expireAt && 'Expiry Date' in serverData) {
+        result.expireAt = new Date(String(serverData['Expiry Date'])).toISOString();
       }
-      if (!result.registrarUrl && serverData['Registrar URL']) {
-        result.registrarUrl = serverData['Registrar URL'].toString();
+      if (!result.registrarUrl && 'Registrar URL' in serverData) {
+        result.registrarUrl = String(serverData['Registrar URL']);
       }
-      if (!result.nameServer && serverData['Name Server']) {
+      if (!result.nameServer && 'Name Server' in serverData) {
         const currentNameServer = serverData['Name Server'];
-        result.nameServer = Array.isArray(currentNameServer) ? currentNameServer.map((ns) => ns.toString()) : currentNameServer.toString();
+        result.nameServer = Array.isArray(currentNameServer) ? currentNameServer.map((ns) => ns.toString()) : String(currentNameServer);
       }
 
       // If all required fields are found, break the loop
