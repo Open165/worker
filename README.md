@@ -1,6 +1,6 @@
 # Open165 Worker
 
-Browser rendering worker for reconnaissance of scam websites.
+Integrations and workflows for Open165.
 
 ## First-time setup
 
@@ -13,8 +13,6 @@ npm i
 ```bash
 npm run dev
 ```
-
-Then visit `http://localhost:8787?url=...` to get reconnaissance result
 
 ## Deploy
 
