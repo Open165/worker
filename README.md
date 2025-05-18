@@ -38,6 +38,12 @@ To automatically fix formatting issues, run:
 npm run format
 ```
 
+To perform a TypeScript type check, run:
+
+```bash
+npm run typecheck
+```
+
 ## Updating bindings
 
 After adding new bindings to `wrangler.jsonc`, run the following command to update the bindings:
