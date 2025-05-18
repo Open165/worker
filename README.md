@@ -26,16 +26,10 @@ npm run deploy
 
 This project uses ESLint for linting and Prettier for code formatting.
 
-To check for linting issues, run:
+To check for linting issues and automatically fix them (including formatting), run:
 
 ```bash
-npm run lint
-```
-
-To automatically fix formatting issues, run:
-
-```bash
-npm run format
+npm run lint -- --fix
 ```
 
 To perform a TypeScript type check, run:
@@ -50,4 +44,3 @@ After adding new bindings to `wrangler.jsonc`, run the following command to upda
 
 ```bash
 npm run cf-typegen
-```

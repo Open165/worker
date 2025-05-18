@@ -8,7 +8,6 @@
     "test": "vitest",
     "cf-typegen": "wrangler types",
     "lint": "eslint . --ext .ts,.js",
-    "format": "prettier --write .",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
