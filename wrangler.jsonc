@@ -14,4 +14,33 @@
   "browser": {
     "binding": "MYBROWSER",
   },
+  // D1 database binding - same as open165
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "open165",
+      "database_id": "3435b2e6-253b-46a0-8e82-48b8e10a3917"
+    }
+  ],
+  // Workflows to sync site data from 165
+  "workflows": [
+    {
+      "name": "sync-site-record",
+      "binding": "SYNC_SITE_RECORD",
+      "class_name": "SyncSiteRecordWorkflow"
+    },
+    {
+      "name": "sync-site-announcement",
+      "binding": "SYNC_SITE_ANNOUNCEMENT",
+      "class_name": "SyncSiteAnnouncementWorkflow"
+    }
+  ],
+  // Environment variables
+  "vars": {
+    "URLSCAN_API_KEY": ""
+  },
+  // Add scheduled trigger to run workflows
+  "triggers": {
+    "crons": ["0 12 * * 1-5"]  // Run every weekday at 20:00 UTC+8 (12:00 UTC)
+  }
 }
