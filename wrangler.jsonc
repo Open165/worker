@@ -10,10 +10,12 @@
     "enabled": true,
     "head_sampling_rate": 1,
   },
-  // Headless browser rendering binding
+  // Headless browser rendering binding (commented out for local testing)
+  /*
   "browser": {
     "binding": "MYBROWSER",
   },
+  */
   // D1 database binding - same as open165
   "d1_databases": [
     {

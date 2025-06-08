@@ -3,6 +3,11 @@
  */
 import { screenshotHandler } from './handlers/screenshot';
 import { whoisHandler } from './handlers/whois';
+import { SyncSiteRecordWorkflow } from './workflows/syncSiteRecord';
+import { SyncSiteAnnouncementWorkflow } from './workflows/syncSiteAnnouncement';
+
+// Export the workflow classes for Cloudflare Workflows
+export { SyncSiteRecordWorkflow, SyncSiteAnnouncementWorkflow };
 
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
