@@ -12,8 +12,6 @@ interface Env {
  * Parameters for the workflow
  */
 type SyncParams = {
-  /** Optional manual execution params */
-  manual?: boolean;
   /** Optional URLscan submission flag */
   submitToUrlscan?: boolean;
 };

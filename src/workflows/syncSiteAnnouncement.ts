@@ -10,10 +10,7 @@ interface Env {
 /**
  * Parameters for the workflow
  */
-type SyncParams = {
-  /** Optional manual execution params */
-  manual?: boolean;
-};
+type SyncParams = never;
 
 /**
  * 165反詐騙官網使用之 API
