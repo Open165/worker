@@ -41,7 +41,7 @@ type NPA165SiteData = {
  */
 export class SyncSiteRecordWorkflow extends WorkflowEntrypoint<Env, SyncParams> {
   async run(event: WorkflowEvent<SyncParams>, step: WorkflowStep) {
-    console.log('Starting site record sync workflow');
+    console.log('[syncSiteRecord]', 'Starting site record sync workflow');
 
     // Step 1: Fetch the latest date in DB
     const latestDate = await step.do('fetch-latest-date', async () => {
@@ -52,7 +52,7 @@ export class SyncSiteRecordWorkflow extends WorkflowEntrypoint<Env, SyncParams> 
       return result?.latestDate || null;
     });
 
-    console.log(`Latest date in DB: ${latestDate || 'None'}`);
+    console.log('[syncSiteRecord]', `Latest date in DB: ${latestDate || 'None'}`);
 
     // Step 2: Fetch and process site records
     const siteRecords = await step.do(
@@ -98,7 +98,7 @@ export class SyncSiteRecordWorkflow extends WorkflowEntrypoint<Env, SyncParams> 
           .filter((data) => !latestDate || data.endDate > latestDate);
 
         if (!rawData.length) {
-          console.log('No new site records found');
+          console.log('[syncSiteRecord]', 'No new site records found');
           return { records: [], urls: [] };
         }
 
@@ -112,7 +112,7 @@ export class SyncSiteRecordWorkflow extends WorkflowEntrypoint<Env, SyncParams> 
       }
     );
 
-    console.log(`Found ${siteRecords.records.length} new site records`);
+    console.log('[syncSiteRecord]', `Found ${siteRecords.records.length} new site records`);
 
     // Step 3: Insert site records into DB
     if (siteRecords.records.length > 0) {
@@ -137,7 +137,7 @@ export class SyncSiteRecordWorkflow extends WorkflowEntrypoint<Env, SyncParams> 
         return { success: true, count: siteRecords.records.length };
       });
 
-      console.log(`Inserted ${siteRecords.records.length} site records into DB`);
+      console.log('[syncSiteRecord]', `Inserted ${siteRecords.records.length} site records into DB`);
     }
 
     // Step 4: Submit URLs to URLscan.io if required
@@ -207,7 +207,7 @@ export class SyncSiteRecordWorkflow extends WorkflowEntrypoint<Env, SyncParams> 
       );
     }
 
-    console.log('Site record sync workflow completed');
+    console.log('[syncSiteRecord]', 'Site record sync workflow completed');
 
     return {
       siteRecordsCount: siteRecords.records.length,

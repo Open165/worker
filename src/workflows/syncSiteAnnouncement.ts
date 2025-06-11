@@ -29,7 +29,7 @@ type NPA165Announcement = {
  */
 export class SyncSiteAnnouncementWorkflow extends WorkflowEntrypoint<Env, SyncParams> {
   async run(event: WorkflowEvent<SyncParams>, step: WorkflowStep) {
-    console.log('Starting site announcement sync workflow');
+    console.log('[syncSiteAnnouncement]', 'Starting site announcement sync workflow');
 
     // Step 1: Fetch and process announcements
     const announcements = await step.do(
@@ -58,7 +58,7 @@ export class SyncSiteAnnouncementWorkflow extends WorkflowEntrypoint<Env, SyncPa
       }
     );
 
-    console.log(`Found ${announcements.length} announcements`);
+    console.log('[syncSiteAnnouncement]', `Found ${announcements.length} announcements`);
 
     // Step 2: Insert announcements into DB
     if (announcements.length > 0) {
@@ -82,10 +82,10 @@ export class SyncSiteAnnouncementWorkflow extends WorkflowEntrypoint<Env, SyncPa
         return { success: true, count: announcements.length };
       });
 
-      console.log(`Inserted ${announcements.length} announcements into DB`);
+      console.log('[syncSiteAnnouncement]', `Inserted ${announcements.length} announcements into DB`);
     }
 
-    console.log('Site announcement sync workflow completed');
+    console.log('[syncSiteAnnouncement]', 'Site announcement sync workflow completed');
 
     return {
       announcementsCount: announcements.length,
