@@ -55,87 +55,88 @@ export class SyncSiteRecordWorkflow extends WorkflowEntrypoint<Env, SyncParams> 
     console.log('[syncSiteRecord]', `Latest date in DB: ${latestDate || 'None'}`);
 
     // Step 2: Fetch and process site records
-    const siteRecords = await step.do(
-      'fetch-site-records',
-      // Add retry configuration
-      {
-        retries: {
-          limit: 3,
-          delay: '10 seconds',
-          backoff: 'exponential',
-        },
-      },
-      async () => {
-        const scamSiteCsv = await (await fetch(NPA_165_SITE_URL)).text();
+    const siteRecords = await step.do('fetch-site-records', async () => {
+      const scamSiteCsv = await (await fetch(NPA_165_SITE_URL)).text();
 
-        const rawData: NPA165SiteData[] = scamSiteCsv
-          .split('\n')
-          .filter(
-            // Skip first 2 rows, they are headers
-            (row, idx) => row.trim() && idx >= 2
-          )
-          .map((line) => {
-            const [name, url, count, startDate, endDate] = line.trim().split(',');
-            return {
-              name: name.trim(),
-              url: url.trim(),
-              count: +count,
-              startDate: startDate.trim(),
-              endDate: endDate.trim(),
+      const rawData: NPA165SiteData[] = scamSiteCsv
+        .split('\n')
+        .filter(
+          // Skip first 2 rows, they are headers
+          (row, idx) => row.trim() && idx >= 2
+        )
+        .map((line) => {
+          const [name, url, count, startDate, endDate] = line.trim().split(',');
+          return {
+            name: name.trim(),
+            url: url.trim(),
+            count: +count,
+            startDate: startDate.trim(),
+            endDate: endDate.trim(),
 
-              /**
-               * Extract host from url. URL in open data may come in these formats:
-               * - some-domain.com
-               * - some-domain.com:port
-               * - some-domain.com/some-path
-               * - some-domain.com/?some-query
-               * - some-domain.com?some-query
-               * - https://some-domain.com
-               */
-              host: url.match(/^(?:https?:\/\/)?([^?/:]+)/)?.[1] ?? url,
-            };
-          })
-          .filter((data) => !latestDate || data.endDate > latestDate);
+            /**
+             * Extract host from url. URL in open data may come in these formats:
+             * - some-domain.com
+             * - some-domain.com:port
+             * - some-domain.com/some-path
+             * - some-domain.com/?some-query
+             * - some-domain.com?some-query
+             * - https://some-domain.com
+             */
+            host: url.match(/^(?:https?:\/\/)?([^?/:]+)/)?.[1] ?? url,
+          };
+        })
+        .filter((data) => !latestDate || data.endDate > latestDate);
 
-        if (!rawData.length) {
-          console.log('[syncSiteRecord]', 'No new site records found');
-          return { records: [], urls: [] };
-        }
-
-        // Sort by endDate ascending
-        rawData.sort((a, b) => a.endDate.localeCompare(b.endDate));
-
-        // Extract URLs for possible URLscan submission
-        const urls = rawData.map((data) => data.url);
-
-        return { records: rawData, urls };
+      if (!rawData.length) {
+        console.log('[syncSiteRecord]', 'No new site records found');
+        return { records: [], urls: [] };
       }
-    );
+
+      // Sort by endDate ascending
+      rawData.sort((a, b) => a.endDate.localeCompare(b.endDate));
+
+      // Extract URLs for possible URLscan submission
+      const urls = rawData.map((data) => data.url);
+
+      return { records: rawData, urls };
+    });
 
     console.log('[syncSiteRecord]', `Found ${siteRecords.records.length} new site records`);
 
     // Step 3: Insert site records into DB
     if (siteRecords.records.length > 0) {
-      await step.do('insert-site-records', async () => {
-        const db = this.env.DB;
+      await step.do(
+        'insert-site-records', // Add retry configuration
+        {
+          retries: {
+            limit: 3,
+            delay: '10 seconds',
+            backoff: 'exponential',
+          },
+        },
+        async () => {
+          const db = this.env.DB;
 
-        // Prepare the insert statement once
-        const insertStmt = db.prepare('INSERT INTO ScamSiteRecord (name, url, count, startDate, endDate, host) VALUES (?, ?, ?, ?, ?, ?)');
+          // Prepare the insert statement once
+          const insertStmt = db.prepare(
+            'INSERT INTO ScamSiteRecord (name, url, count, startDate, endDate, host) VALUES (?, ?, ?, ?, ?, ?)'
+          );
 
-        // Create an array of bound statements for batch execution
-        const batchStatements = siteRecords.records.map((record) => {
-          return insertStmt.bind(record.name, record.url, record.count, record.startDate, record.endDate, record.host);
-        });
+          // Create an array of bound statements for batch execution
+          const batchStatements = siteRecords.records.map((record) => {
+            return insertStmt.bind(record.name, record.url, record.count, record.startDate, record.endDate, record.host);
+          });
 
-        // Prepare and add FTS rebuild statement
-        const rebuildFtsStmt = db.prepare('INSERT INTO ScamSiteRecordFTS(ScamSiteRecordFTS) VALUES(?)');
-        batchStatements.push(rebuildFtsStmt.bind('rebuild'));
+          // Prepare and add FTS rebuild statement
+          const rebuildFtsStmt = db.prepare('INSERT INTO ScamSiteRecordFTS(ScamSiteRecordFTS) VALUES(?)');
+          batchStatements.push(rebuildFtsStmt.bind('rebuild'));
 
-        // Execute all statements in a batch
-        await db.batch(batchStatements);
+          // Execute all statements in a batch
+          await db.batch(batchStatements);
 
-        return { success: true, count: siteRecords.records.length };
-      });
+          return { success: true, count: siteRecords.records.length };
+        }
+      );
 
       console.log('[syncSiteRecord]', `Inserted ${siteRecords.records.length} site records into DB`);
     }
